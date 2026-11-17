@@ -6,6 +6,10 @@ rk4   with drag: E0 = 134.37500 J, E_final = 57.46134 J, monotone decrease = Tru
 euler with drag + 4 bounces: monotone decrease = True
 rk4   with drag + 4 bounces: monotone decrease = True
 drag energy budget (RK4, dt = 0.001): energy lost = 76.91366 J, drag work = 76.91368 J, max |mismatch| = 1.4e-05 J (1.8e-07 of the loss)
+drag energy budget (EULER, dt = 0.01): energy lost = 76.66848 J, drag work = 77.00502 J, max |mismatch| = 3.37e-01 J
+drag energy budget (RK4, dt = 0.01): energy lost = 76.91366 J, drag work = 76.91503 J, max |mismatch| = 1.37e-03 J
+drag energy budget, euler: mismatch shrinks as dt^1.01 (Euler's own error)
+drag energy budget, rk4: mismatch shrinks as dt^2.00 (trapezoid sum of W)
 no drag, euler: measured order = 1.00
 no drag, rk4: error stays at roundoff level (max 6.6e-13 m)
 with drag, euler: measured order = 0.99

@@ -135,29 +135,59 @@ def convergence_study():
     plt.close()
 
 
-def drag_energy_budget():
-    # Quantitative B3 check: energy lost must equal the work done against drag,
-    # E0 - E(t) = integral of K|v|^3 dt. Single flight only (a bounce removes energy too).
-    dt = 1e-3
-    r = sim.simulate(v0, th, dt, method="rk4", drag=True)
+def budget_mismatch(method, dt):
+    """Run one flight with drag; return (sim result, energy lost, drag work, mismatch array).
+    mismatch = (E0 - E(t)) - W(t): zero for an exact solution and an exact integral."""
+    r = sim.simulate(v0, th, dt, method=method, drag=True)
     energies = sim.energy(r)
     lost = energies[0] - energies
     W = drag_work(r)
-    mismatch = np.max(np.abs(lost - W))
-    print(f"drag energy budget (RK4, dt = {dt}): energy lost = {lost[-1]:.5f} J, "
-          f"drag work = {W[-1]:.5f} J, max |mismatch| = {mismatch:.1e} J "
-          f"({mismatch / lost[-1]:.1e} of the loss)")
+    return r, lost, W, lost - W
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(6.4, 6),
-                                   gridspec_kw={"height_ratios": [2, 1]})
-    ax1.plot(r["t"], lost, label=r"Energy lost $E_0 - E(t)$")
-    ax1.plot(r["t"], W, "--", label=r"Drag work $\int K|v|^3\,dt$")
-    ax1.set_ylabel("Energy (J)")
-    ax1.set_title(f"Energy lost vs work done by drag (RK4, dt = {dt} s)")
+
+def drag_energy_budget():
+    # Quantitative B3 check: energy lost must equal the work done against drag,
+    # E0 - E(t) = integral of K|v|^3 dt. Single flight only (a bounce removes energy too).
+    #
+    # Two things make the mismatch non-zero, and they shrink at different rates as dt -> 0:
+    #   * the integrator's own error: Euler's is first order, so its mismatch ~ dt;
+    #     RK4's is fourth order (~dt^4), far too small to see here;
+    #   * the trapezoid rule used to add up W from the saved points, which is second order (~dt^2).
+    # So Euler's mismatch measures Euler, while RK4's measures only the trapezoid sum. That is
+    # why the headline RK4 number is computed at a smaller step (dt = 1e-3 s).
+    dt_main = 1e-3
+    _, lost, W, mis = budget_mismatch("rk4", dt_main)
+    print(f"drag energy budget (RK4, dt = {dt_main}): energy lost = {lost[-1]:.5f} J, "
+          f"drag work = {W[-1]:.5f} J, max |mismatch| = {np.max(np.abs(mis)):.1e} J "
+          f"({np.max(np.abs(mis)) / lost[-1]:.1e} of the loss)")
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6.4, 6.6),
+                                   gridspec_kw={"height_ratios": [1, 1], "hspace": 0.45})
+    # (top) mismatch against time at the working step dt = 0.01 s
+    for m in ("euler", "rk4"):
+        r, lost, W, mis = budget_mismatch(m, 0.01)
+        print(f"drag energy budget ({m.upper()}, dt = 0.01): energy lost = {lost[-1]:.5f} J, "
+              f"drag work = {W[-1]:.5f} J, max |mismatch| = {np.max(np.abs(mis)):.2e} J")
+        ax1.plot(r["t"], mis, label=m.upper())
+    ax1.axhline(0, color="0.5", lw=0.8)
+    ax1.set_xlabel("Time (s)")
+    ax1.set_ylabel(r"$(E_0 - E) - W$  (J)")
+    ax1.set_title("Energy lost minus drag work (dt = 0.01 s)")
     ax1.legend()
-    ax2.plot(r["t"], lost - W)
-    ax2.set_xlabel("Time (s)")
-    ax2.set_ylabel("Difference (J)")
+
+    # (bottom) how the largest mismatch shrinks with dt: the slope says where it comes from
+    dts = np.array([0.02, 0.01, 0.005, 0.0025, 0.00125])
+    for m, what in (("euler", "Euler's own error"), ("rk4", "trapezoid sum of W")):
+        err = np.array([np.max(np.abs(budget_mismatch(m, dt)[3])) for dt in dts])
+        p = np.polyfit(np.log(dts), np.log(err), 1)[0]
+        print(f"drag energy budget, {m}: mismatch shrinks as dt^{p:.2f} ({what})")
+        ax2.loglog(dts, err, "o-", label=f"{m.upper()} (slope {p:.2f}): {what}")
+    ax2.xaxis.set_minor_formatter(plt.NullFormatter())   # keep only the 10^-3, 10^-2 labels
+    ax2.set_xlabel("Timestep dt (s)")
+    ax2.set_ylabel("max |mismatch| (J)")
+    ax2.set_title("Largest mismatch vs timestep")
+    ax2.legend(fontsize=8)
+    ax2.grid(True, which="both", alpha=0.3)
     fig.savefig(os.path.join(OUT, "drag_energy_budget.png"), dpi=300, bbox_inches="tight")
     plt.close(fig)
 
