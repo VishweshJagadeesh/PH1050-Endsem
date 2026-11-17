@@ -1,0 +1,23 @@
+PASS CLEANING (games 1, 2)
+  raw PASS events                               dropped    0   left 1763
+  missing coordinates                           dropped    0   left 1763
+  zero or negative duration                     dropped    2   left 1761
+  zero distance                                 dropped    0   left 1761
+  average speed > 40 m/s (timing error)         dropped    9   left 1752
+  kept 43 passes with a start/end up to 3.1 m outside the lines (realistic near a touchline)
+  distance: median 13.7 m, range 1.1-69.6 m
+  duration: median 1.20 s, range 0.16-5.32 s
+
+BALL SPEEDS FROM TRACKING
+  game 1: 145006 frames, 56755 without a ball position, 88096 usable frame pairs, 183 glitches > 40 m/s removed
+  game 2: 141156 frames, 57884 without a ball position, 83104 usable frame pairs, 164 glitches > 40 m/s removed
+  total: 170853 speeds kept, 347 glitches removed (0.203%)
+  median speed 5.53 m/s, 99th percentile 22.53 m/s
+
+FIT: duration = a + b * distance
+  n = 1752, R^2 = 0.581
+  slope b     = 0.0558 s/m  (SE 0.0011)
+  95% CI (t)         [0.0536, 0.0580] s/m
+  95% CI (bootstrap) [0.0529, 0.0589] s/m
+  intercept a = 0.470 s  (SE 0.021)
+  -> each extra metre adds 0.056 s; 1/b = 17.9 m/s (95% CI 17.2-18.7 m/s) is the marginal speed of a pass

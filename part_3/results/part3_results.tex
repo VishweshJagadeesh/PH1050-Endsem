@@ -1,0 +1,17 @@
+\begin{table}[h]
+\centering\small
+\begin{tabular}{llrrrr}
+\hline
+Test & Model & Train RMSE (s) & Test RMSE (s) [95\% CI] & MAE (s) & Bias (s) \\
+\hline
+random 80/20 & mean (baseline) & 0.685 & 0.663 [0.599, 0.728] & 0.514 & +0.004 \\
+random 80/20 & linear & 0.447 & 0.415 [0.373, 0.456] & 0.318 & +0.025 \\
+random 80/20 & quadratic & 0.446 & 0.415 [0.373, 0.457] & 0.317 & +0.025 \\
+short $\to$ long (extrapolation) & mean (baseline) & 0.467 & 1.290 [1.194, 1.384] & 1.062 & -1.049 \\
+short $\to$ long (extrapolation) & linear & 0.391 & 0.599 [0.541, 0.658] & 0.457 & -0.027 \\
+short $\to$ long (extrapolation) & quadratic & 0.391 & 0.719 [0.653, 0.790] & 0.552 & +0.206 \\
+\hline
+\end{tabular}
+\caption{Pass duration predicted from distance. CIs from 2000 bootstrap resamples of the test passes.}
+\label{tab:part3}
+\end{table}

@@ -1,0 +1,23 @@
+1752 cleaned passes, distance 1.1-69.6 m. All errors in seconds; bias = mean(predicted - observed).
+
+TEST 1: random split (train 1402, test 350, seed 0)
+  model            train RMSE       test RMSE [95% CI]     MAE    bias
+  mean (baseline)       0.685    0.663 [0.599, 0.728]   0.514  +0.004
+  linear                0.447    0.415 [0.373, 0.456]   0.318  +0.025
+  quadratic             0.446    0.415 [0.373, 0.457]   0.317  +0.025
+  RMSE(linear) - RMSE(mean (baseline)) = -0.2496 s, 95% CI [-0.3123, -0.1875]
+  RMSE(quadratic) - RMSE(linear) = -0.0001 s, 95% CI [-0.0028, +0.0025]
+  over 200 random splits, test RMSE mean ± std: mean (baseline) 0.679 ± 0.041, linear 0.440 ± 0.024, quadratic 0.441 ± 0.024
+  quadratic beats linear in 60% of the 200 splits
+
+TEST 2: extrapolation (train on 1402 passes up to 21.7 m, test on the longest 350: 21.7-69.6 m)
+  model            train RMSE       test RMSE [95% CI]     MAE    bias
+  mean (baseline)       0.467    1.290 [1.194, 1.384]   1.062  -1.049
+  linear                0.391    0.599 [0.541, 0.658]   0.457  -0.027
+  quadratic             0.391    0.719 [0.653, 0.790]   0.552  +0.206
+  RMSE(linear) - RMSE(mean (baseline)) = -0.6891 s, 95% CI [-0.7637, -0.6152]
+  RMSE(quadratic) - RMSE(linear) = +0.1192 s, 95% CI [+0.0691, +0.1743]
+
+FITTED COEFFICIENTS (T in s, D in m)
+  random        linear: T = 0.471 + 0.0560 D    quadratic: T = 0.418 + 0.0621 D -0.000126 D^2
+  extrapolation linear: T = 0.459 + 0.0561 D    quadratic: T = 0.543 + 0.0409 D +0.000605 D^2
