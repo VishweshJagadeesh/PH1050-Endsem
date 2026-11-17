@@ -1,21 +1,31 @@
+"""Part 1 verification: analytic no-drag case, energy checks, convergence study, bounces.
+
+Run from anywhere:  python Part_1/COMPHY_part1_verification.py   (figures/tables -> Results/Part_1/)
+"""
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import part_1.COMPHY_FOOTBALL_SIMULATOR as sim
+import COMPHY_FOOTBALL_SIMULATOR as sim
 
-os.makedirs("results", exist_ok=True)
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # project folder
+OUT = os.path.join(ROOT, "Results", "Part_1")
 
-# ---- Parameters from the assignment ----
+os.makedirs(OUT, exist_ok=True)
+
+# ---- Parameters used here (all defined in the simulator) ----
 M = sim.M
-R = sim.R
-CD = sim.CD
-RHO = sim.RHO
 G = sim.G
 E = sim.E          # coefficient of restitution (vertical velocity only)
-AREA = sim.AREA
 K = sim.K          # drag constant: F_drag = K * |v| * v
 
 v0, th = 25.0, np.radians(35)
+
+
+def drag_work(r):
+    """Cumulative work done against drag, W(t) = integral of K|v|^3 dt (trapezoid rule
+    on the saved points, which handles the shorter partial step at landing)."""
+    p = K * np.hypot(r["vx"], r["vy"])**3          # power dissipated by drag (W)
+    return np.concatenate([[0.0], np.cumsum(0.5 * (p[1:] + p[:-1]) * np.diff(r["t"]))])
 
 
 def energy_checks():
@@ -29,12 +39,20 @@ def energy_checks():
         plt.semilogy(r["t"], np.maximum(np.abs(drift), 1e-17), label=m.upper())
         print(f"{m:5s} no drag: E0 = {energies[0]:.5f} J, E_final = {energies[-1]:.5f} J, "
               f"max relative drift = {max_drift:.3e}")
+        if m == "euler":
+            # Each Euler step adds exactly 0.5*M*g^2*dt^2, so E - E0 = 0.5*M*g^2*dt*t.
+            # (The last point comes from a shorter partial step h, which adds 0.5*M*g^2*h^2.)
+            pred = 0.5 * M * G**2 * 0.01 * r["t"]
+            plt.semilogy(r["t"], pred / energies[0], "k:", label="Euler prediction ½Mg²·dt·t")
+            print(f"      Euler drift at landing: measured {energies[-1] - energies[0]:.5f} J, "
+                  f"predicted 0.5*M*g^2*dt*T = {pred[-1]:.5f} J; "
+                  f"max mismatch before landing step = "
+                  f"{np.max(np.abs((energies - energies[0] - pred)[:-1])):.1e} J")
     plt.title("No drag: relative energy drift |E - E0|/E0 (dt = 0.01 s)")
     plt.xlabel("Time (s)")
     plt.ylabel("Relative energy drift")
     plt.legend()
-    plt.savefig("results/nodrag_energy_conservation.png", dpi=300, bbox_inches="tight")
-    plt.show()
+    plt.savefig(os.path.join(OUT, "nodrag_energy_conservation.png"), dpi=300, bbox_inches="tight")
     plt.close()
 
     # --- with drag: energy only decreases (single flight, then across bounces) ---
@@ -51,8 +69,7 @@ def energy_checks():
     plt.xlabel("Time (s)")
     plt.ylabel("Energy (J)")
     plt.legend()
-    plt.savefig("results/drag_energy_decrease.png", dpi=300, bbox_inches="tight")
-    plt.show()
+    plt.savefig(os.path.join(OUT, "drag_energy_decrease.png"), dpi=300, bbox_inches="tight")
     plt.close()
 
     plt.figure()
@@ -67,8 +84,7 @@ def energy_checks():
     plt.xlabel("Time (s)")
     plt.ylabel("Energy (J)")
     plt.legend()
-    plt.savefig("results/drag_bounce_energy.png", dpi=300, bbox_inches="tight")
-    plt.show()
+    plt.savefig(os.path.join(OUT, "drag_bounce_energy.png"), dpi=300, bbox_inches="tight")
     plt.close()
 
 
@@ -98,8 +114,7 @@ def convergence_study():
     plt.ylabel("|Range error| (m)")
     plt.legend()
     plt.grid(True, which="both", alpha=0.3)
-    plt.savefig("results/nodrag_convergence_study.png", dpi=300, bbox_inches="tight")
-    plt.show()
+    plt.savefig(os.path.join(OUT, "nodrag_convergence_study.png"), dpi=300, bbox_inches="tight")
     plt.close()
 
     # (b) with drag: no analytic answer, so compare against a very fine RK4 reference.
@@ -116,9 +131,35 @@ def convergence_study():
     plt.ylabel("|Range error| (m)")
     plt.legend()
     plt.grid(True, which="both", alpha=0.3)
-    plt.savefig("results/drag_convergence_study.png", dpi=300, bbox_inches="tight")
-    plt.show()
+    plt.savefig(os.path.join(OUT, "drag_convergence_study.png"), dpi=300, bbox_inches="tight")
     plt.close()
+
+
+def drag_energy_budget():
+    # Quantitative B3 check: energy lost must equal the work done against drag,
+    # E0 - E(t) = integral of K|v|^3 dt. Single flight only (a bounce removes energy too).
+    dt = 1e-3
+    r = sim.simulate(v0, th, dt, method="rk4", drag=True)
+    energies = sim.energy(r)
+    lost = energies[0] - energies
+    W = drag_work(r)
+    mismatch = np.max(np.abs(lost - W))
+    print(f"drag energy budget (RK4, dt = {dt}): energy lost = {lost[-1]:.5f} J, "
+          f"drag work = {W[-1]:.5f} J, max |mismatch| = {mismatch:.1e} J "
+          f"({mismatch / lost[-1]:.1e} of the loss)")
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(6.4, 6),
+                                   gridspec_kw={"height_ratios": [2, 1]})
+    ax1.plot(r["t"], lost, label=r"Energy lost $E_0 - E(t)$")
+    ax1.plot(r["t"], W, "--", label=r"Drag work $\int K|v|^3\,dt$")
+    ax1.set_ylabel("Energy (J)")
+    ax1.set_title(f"Energy lost vs work done by drag (RK4, dt = {dt} s)")
+    ax1.legend()
+    ax2.plot(r["t"], lost - W)
+    ax2.set_xlabel("Time (s)")
+    ax2.set_ylabel("Difference (J)")
+    fig.savefig(os.path.join(OUT, "drag_energy_budget.png"), dpi=300, bbox_inches="tight")
+    plt.close(fig)
 
 
 def bounce_check():
@@ -142,8 +183,7 @@ def trajectory_plot():
     plt.xlabel("x (m)")
     plt.ylabel("y (m)")
     plt.legend()
-    plt.savefig("results/trajectories.png", dpi=300, bbox_inches="tight")
-    plt.show()
+    plt.savefig(os.path.join(OUT, "trajectories.png"), dpi=300, bbox_inches="tight")
     plt.close()
 
 
@@ -172,12 +212,12 @@ def no_drag_comparison():
             return v
         return f"{v:.6g}" if c in ("v0", "theta") else f"{v:.6e}"
 
-    with open("results/no_drag_comparison_table_full.csv", "w") as f:
+    with open(os.path.join(OUT, "no_drag_comparison_table_full.csv"), "w") as f:
         f.write(",".join(cols) + "\n")
         for r in rows:
             f.write(",".join(str(r[c]) for c in cols) + "\n")
 
-    with open("results/no_drag_comparison_table.csv", "w") as f:
+    with open(os.path.join(OUT, "no_drag_comparison_table.csv"), "w") as f:
         f.write(",".join(cols) + "\n")
         for r in rows:
             f.write(",".join(csv_val(c, r[c]) for c in cols) + "\n")
@@ -189,7 +229,7 @@ def no_drag_comparison():
 
     tex_head = [r"Case ($v_0$, $\theta$)", "Method", "$R$ num (m)", "$R$ analytic (m)",
                 r"$|\Delta R|$ (m)", "rel. err.", "$T$ num (s)", "$T$ analytic (s)", r"$|\Delta T|$ (s)"]
-    with open("results/no_drag_comparison_table.tex", "w") as f:
+    with open(os.path.join(OUT, "no_drag_comparison_table.tex"), "w") as f:
         f.write("\\begin{table}[h]\n\\centering\\small\n")
         f.write("\\begin{tabular}{" + "l" * 2 + "r" * 7 + "}\n\\hline\n")
         f.write(" & ".join(tex_head) + " \\\\\n\\hline\n")
@@ -202,9 +242,30 @@ def no_drag_comparison():
         f.write("\\label{tab:no_drag_comparison}\n\\end{table}\n")
 
 
+class _Tee:
+    """Send printed output to the screen and to a file at the same time."""
+    def __init__(self, *streams):
+        self.streams = streams
+
+    def write(self, s):
+        for st in self.streams:
+            st.write(s)
+
+    def flush(self):
+        for st in self.streams:
+            st.flush()
+
+
 if __name__ == "__main__":
-    no_drag_comparison()
-    energy_checks()
-    convergence_study()
-    bounce_check()
-    trajectory_plot()
+    import sys
+    with open(os.path.join(OUT, "part1_summary.txt"), "w") as log:
+        sys.stdout = _Tee(sys.__stdout__, log)
+        try:
+            no_drag_comparison()
+            energy_checks()
+            drag_energy_budget()
+            convergence_study()
+            bounce_check()
+            trajectory_plot()
+        finally:
+            sys.stdout = sys.__stdout__

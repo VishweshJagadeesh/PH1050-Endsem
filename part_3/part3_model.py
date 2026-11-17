@@ -6,13 +6,17 @@ Test 2  extrapolation: train on the shortest 80% of passes, test on the longest 
 Errors on test scores come from bootstrapping the test passes; model-vs-model differences
 use a paired bootstrap (the same resampled passes for both models).
 
-Run (after part2_statistics.py):  python part3_model.py
+Run (after Part_2/part2_statistics.py):  python Part_3/part3_model.py   (-> Results/Part_3/)
 """
 import os
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # project folder
+OUT = os.path.join(ROOT, "Results", "Part_3")
+CLEAN_CSV = os.path.join(ROOT, "data", "passes_clean.csv")
 
 MODELS = {"mean (baseline)": 0, "linear": 1, "quadratic": 2}   # name -> polynomial degree
 SEED = 0
@@ -120,8 +124,8 @@ def plot_rmse_bars(results, path):
 
 
 # ---------------------------------------------------------------- main
-def main(csv="passes_clean.csv"):
-    os.makedirs("results", exist_ok=True)
+def main(csv=CLEAN_CSV):
+    os.makedirs(OUT, exist_ok=True)
     p = pd.read_csv(csv)
     d, t = p["distance"].to_numpy(), p["duration"].to_numpy()
     out = []
@@ -150,7 +154,7 @@ def main(csv="passes_clean.csv"):
     for a, b in (("linear", "mean (baseline)"), ("quadratic", "linear")):
         med, lo, hi = paired_difference(boot, a, b)
         say(f"  RMSE({a}) - RMSE({b}) = {med:+.4f} s, 95% CI [{lo:+.4f}, {hi:+.4f}]")
-    plot_split(d, t, tr, te, coefs, "Random 80/20 split", "results/part3_random_split.png")
+    plot_split(d, t, tr, te, coefs, "Random 80/20 split", os.path.join(OUT, "part3_random_split.png"))
 
     # repeated random splits: how much does the score depend on which passes land in the test set?
     rep = {m: [] for m in MODELS}
@@ -175,7 +179,7 @@ def main(csv="passes_clean.csv"):
         med, lo, hi = paired_difference(boot, a, b)
         say(f"  RMSE({a}) - RMSE({b}) = {med:+.4f} s, 95% CI [{lo:+.4f}, {hi:+.4f}]")
     plot_split(d, t, tr, te, coefs, "Extrapolation: train on short passes, test on the longest 20%",
-               "results/part3_extrapolation.png", cut=cut)
+               os.path.join(OUT, "part3_extrapolation.png"), cut=cut)
 
     # coefficients, for the report
     say("\nFITTED COEFFICIENTS (T in s, D in m)")
@@ -184,12 +188,12 @@ def main(csv="passes_clean.csv"):
         say(f"  {name:13s} linear: T = {c1[1]:.3f} + {c1[0]:.4f} D    "
             f"quadratic: T = {c2[2]:.3f} + {c2[1]:.4f} D {c2[0]:+.6f} D^2")
 
-    plot_rmse_bars(results, "results/part3_rmse_comparison.png")
+    plot_rmse_bars(results, os.path.join(OUT, "part3_rmse_comparison.png"))
 
     # results table (csv + LaTeX)
     flat = [dict(test=k.replace("\n", " "), **r) for k, rows in results.items() for r in rows]
-    pd.DataFrame(flat).to_csv("results/part3_results.csv", index=False, float_format="%.4f")
-    with open("results/part3_results.tex", "w") as f:
+    pd.DataFrame(flat).to_csv(os.path.join(OUT, "part3_results.csv"), index=False, float_format="%.4f")
+    with open(os.path.join(OUT, "part3_results.tex"), "w") as f:
         f.write("\\begin{table}[h]\n\\centering\\small\n\\begin{tabular}{llrrrr}\n\\hline\n")
         f.write("Test & Model & Train RMSE (s) & Test RMSE (s) [95\\% CI] & MAE (s) & Bias (s) \\\\\n\\hline\n")
         for r in flat:
@@ -201,7 +205,7 @@ def main(csv="passes_clean.csv"):
                 "CIs from 2000 bootstrap resamples of the test passes.}\n"
                 "\\label{tab:part3}\n\\end{table}\n")
 
-    with open("results/part3_summary.txt", "w") as f:
+    with open(os.path.join(OUT, "part3_summary.txt"), "w") as f:
         f.write("\n".join(out) + "\n")
     return results
 

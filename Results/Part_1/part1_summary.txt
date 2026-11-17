@@ -1,0 +1,14 @@
+euler no drag: E0 = 134.37500 J, E_final = 134.98148 J, max relative drift = 4.513e-03
+      Euler drift at landing: measured 0.60648 J, predicted 0.5*M*g^2*dt*T = 0.60695 J; max mismatch before landing step = 1.7e-13 J
+rk4   no drag: E0 = 134.37500 J, E_final = 134.37500 J, max relative drift = 1.058e-15
+euler with drag: E0 = 134.37500 J, E_final = 57.70652 J, monotone decrease = True
+rk4   with drag: E0 = 134.37500 J, E_final = 57.46134 J, monotone decrease = True
+euler with drag + 4 bounces: monotone decrease = True
+rk4   with drag + 4 bounces: monotone decrease = True
+drag energy budget (RK4, dt = 0.001): energy lost = 76.91366 J, drag work = 76.91368 J, max |mismatch| = 1.4e-05 J (1.8e-07 of the loss)
+no drag, euler: measured order = 1.00
+no drag, rk4: error stays at roundoff level (max 6.6e-13 m)
+with drag, euler: measured order = 0.99
+with drag, rk4: measured order = 4.04
+bounce flight durations (s): [2.9234273  2.04639911 1.43247938 1.00273556]
+successive ratios: [0.7 0.7 0.7] (expected e = 0.7)

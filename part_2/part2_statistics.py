@@ -1,10 +1,10 @@
 """Part 2: pass data and ball-tracking statistics (Metrica Sports sample games 1 and 2).
 
-Data: https://github.com/metrica-sports/sample-data  (clone it into ./data/sample-data)
+Data: https://github.com/metrica-sports/sample-data  (clone it into data/sample-data)
 Positions are given as fractions of the pitch (0..1 on each axis); the pitch is 105 x 68 m.
 
-Run:  python part2_statistics.py [--data-dir data/sample-data/data]
-Writes figures and tables to results/, and the cleaned passes to results/passes_clean.csv
+Run from anywhere:  python Part_2/part2_statistics.py [--data-dir data/sample-data/data]
+Writes figures and tables to Results/Part_2/ and the cleaned passes to data/passes_clean.csv
 (used by Part 3 and by the B5 lofted-ball comparison).
 """
 import argparse
@@ -14,6 +14,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import stats
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # project folder
+OUT = os.path.join(ROOT, "Results", "Part_2")
+CLEAN_CSV = os.path.join(ROOT, "data", "passes_clean.csv")
 
 PITCH_X, PITCH_Y = 105.0, 68.0   # m
 FPS = 25.0                       # tracking frame rate (Hz)
@@ -172,7 +176,7 @@ def plot_fit(p, fit, path):
 
 # ---------------------------------------------------------------- main
 def main(data_dir):
-    os.makedirs("results", exist_ok=True)
+    os.makedirs(OUT, exist_ok=True)
     out = []   # lines for the summary file
 
     def say(s=""):
@@ -192,8 +196,8 @@ def main(data_dir):
     say(f"  duration: median {passes['duration'].median():.2f} s, range "
         f"{passes['duration'].min():.2f}-{passes['duration'].max():.2f} s")
     passes[["game", "Period", "Subtype", "Start Time [s]", "End Time [s]", "distance", "duration"]] \
-        .to_csv("results/passes_clean.csv", index=False)
-    plot_pass_histograms(passes, "results/part2_pass_histograms.png")
+        .to_csv(CLEAN_CSV, index=False)
+    plot_pass_histograms(passes, os.path.join(OUT, "part2_pass_histograms.png"))
 
     # --- ball speeds from tracking
     say("\nBALL SPEEDS FROM TRACKING")
@@ -210,7 +214,7 @@ def main(data_dir):
     say(f"  total: {len(v)} speeds kept, {total_removed} glitches removed "
         f"({100 * total_removed / (len(v) + total_removed):.3f}%)")
     say(f"  median speed {median:.2f} m/s, 99th percentile {p99:.2f} m/s")
-    plot_speed_histogram(v, median, p99, total_removed, "results/part2_ball_speeds.png")
+    plot_speed_histogram(v, median, p99, total_removed, os.path.join(OUT, "part2_ball_speeds.png"))
 
     # --- duration vs distance fit
     fit = fit_duration_vs_distance(passes["distance"], passes["duration"])
@@ -223,15 +227,15 @@ def main(data_dir):
     say(f"  intercept a = {fit['intercept']:.3f} s  (SE {fit['intercept_se']:.3f})")
     say(f"  -> each extra metre adds {fit['slope']:.3f} s; 1/b = {1 / fit['slope']:.1f} m/s "
         f"(95% CI {1 / hi:.1f}-{1 / lo:.1f} m/s) is the marginal speed of a pass")
-    plot_fit(passes, fit, "results/part2_duration_vs_distance.png")
+    plot_fit(passes, fit, os.path.join(OUT, "part2_duration_vs_distance.png"))
 
-    with open("results/part2_summary.txt", "w") as f:
+    with open(os.path.join(OUT, "part2_summary.txt"), "w") as f:
         f.write("\n".join(out) + "\n")
     return passes, v, fit
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--data-dir", default=os.path.join("data", "sample-data", "data"),
+    ap.add_argument("--data-dir", default=os.path.join(ROOT, "data", "sample-data", "data"),
                     help="folder containing Sample_Game_1, Sample_Game_2, ...")
     main(ap.parse_args().data_dir)

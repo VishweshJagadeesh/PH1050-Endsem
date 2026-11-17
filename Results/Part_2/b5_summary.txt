@@ -1,0 +1,23 @@
+LAUNCH SPEED NEEDED TO REACH D (RK4 with drag) -- plausibility check
+  angle   D=30 m: v0, T   D=45 m: v0, T   D=60 m: v0, T
+    20°    24.8 m/s 1.59 s    32.9 m/s 2.01 s    41.4 m/s 2.39 s
+    30°    21.5 m/s 2.01 s    28.6 m/s 2.54 s    36.2 m/s 3.02 s
+    40°    20.3 m/s 2.43 s    27.3 m/s 3.07 s    34.9 m/s 3.66 s
+    50°    20.7 m/s 2.91 s    28.2 m/s 3.69 s    36.6 m/s 4.42 s
+  (hard long kicks in real football are roughly 25-35 m/s)
+
+ALL PASSES > 30 M: n = 128, distance 30.0-69.6 m, mean observed duration 2.67 s
+  angle   mean(T_obs - T_sim) ± SE    95% bootstrap CI     RMSE
+    20°   +0.803 ± 0.060 s       [+0.692, +0.920] s   1.050 s
+    30°   +0.313 ± 0.059 s       [+0.205, +0.426] s   0.731 s
+    40°   -0.183 ± 0.058 s       [-0.290, -0.072] s   0.675 s
+    50°   -0.755 ± 0.057 s       [-0.862, -0.643] s   0.993 s
+  effective launch angle (mean residual = 0): 36.4°, 95% CI [34.2°, 38.6°]
+
+GOAL KICKS > 30 M: n = 15, distance 30.2-69.6 m, mean observed duration 2.85 s
+  angle   mean(T_obs - T_sim) ± SE    95% bootstrap CI     RMSE
+    20°   +0.668 ± 0.166 s       [+0.377, +0.992] s   0.913 s
+    30°   +0.093 ± 0.158 s       [-0.188, +0.403] s   0.600 s
+    40°   -0.492 ± 0.153 s       [-0.764, -0.186] s   0.754 s
+    50°   -1.173 ± 0.149 s       [-1.446, -0.886] s   1.299 s
+  effective launch angle (mean residual = 0): 31.6°, 95% CI [26.6°, 36.9°]

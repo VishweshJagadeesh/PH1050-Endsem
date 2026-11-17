@@ -7,7 +7,7 @@ TEST 1: random split (train 1402, test 350, seed 0)
   quadratic             0.446    0.415 [0.373, 0.457]   0.317  +0.025
   RMSE(linear) - RMSE(mean (baseline)) = -0.2496 s, 95% CI [-0.3123, -0.1875]
   RMSE(quadratic) - RMSE(linear) = -0.0001 s, 95% CI [-0.0028, +0.0025]
-  over 200 random splits, test RMSE mean ± std: mean (baseline) 0.679 ± 0.041, linear 0.440 ± 0.024, quadratic 0.441 ± 0.024
+  over 200 random splits, test RMSE mean Â± std: mean (baseline) 0.679 Â± 0.041, linear 0.440 Â± 0.024, quadratic 0.441 Â± 0.024
   quadratic beats linear in 60% of the 200 splits
 
 TEST 2: extrapolation (train on 1402 passes up to 21.7 m, test on the longest 350: 21.7-69.6 m)

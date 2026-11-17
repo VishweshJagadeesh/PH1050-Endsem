@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 
-import part_1.COMPHY_FOOTBALL_SIMULATOR as sim
+import COMPHY_FOOTBALL_SIMULATOR as sim
 
 V0, TH = 25.0, np.radians(35)
 
@@ -86,3 +86,24 @@ def test_bounce_flight_times_scale_by_e():
     T = np.diff(np.r_[0, t_land])
     assert len(T) == 4
     np.testing.assert_allclose(T[1:] / T[:-1], sim.E, rtol=1e-9)
+
+
+# ---- launch along the ground and the launch-speed helper
+def test_zero_angle_lands_immediately():
+    r = sim.simulate(15.0, 0.0, 0.01, method="rk4", drag=True)
+    assert r["range"] == pytest.approx(0.0, abs=1e-12)
+    assert r["flight_time"] == pytest.approx(0.0, abs=1e-12)
+
+
+@pytest.mark.parametrize("deg", [20.0, 35.0, 50.0])
+def test_launch_speed_for_range_no_drag_matches_formula(deg):
+    th = np.radians(deg)
+    v0 = sim.launch_speed_for_range(40.0, th, drag=False)
+    assert v0 == pytest.approx(np.sqrt(40.0 * sim.G / np.sin(2 * th)), rel=1e-9)
+
+
+def test_flight_time_for_range_with_drag_lands_at_target():
+    v0, T = sim.flight_time_for_range(55.0, np.radians(35))
+    r = sim.simulate(v0, np.radians(35), 0.01, drag=True)
+    assert r["range"] == pytest.approx(55.0, abs=1e-6)
+    assert r["flight_time"] == pytest.approx(T)
